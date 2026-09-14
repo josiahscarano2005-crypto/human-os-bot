@@ -1,6 +1,6 @@
 {
   "day_log": {},
-  "last_run": "2026-09-14T10:57:59-04:00",
+  "last_run": "2026-09-14T11:18:25-04:00",
   "pending_acks": [],
   "sent": {
     "2026-09-14:deadline_zool_quiz_1_d0": {
@@ -17,6 +17,11 @@
       "at": "2026-09-14T06:40:40-04:00",
       "event_id": "mon_briefing",
       "template": "morning_briefing"
+    },
+    "2026-09-14:mon_post_class": {
+      "at": "2026-09-14T11:18:25-04:00",
+      "event_id": "mon_post_class",
+      "template": "post_class"
     },
     "2026-09-14:mon_zool_transition": {
       "at": "2026-09-14T07:48:15-04:00",

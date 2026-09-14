@@ -291,6 +291,55 @@ def build_sender(args: argparse.Namespace) -> TelegramSender:
     )
 
 
+def cmd_doctor() -> int:
+    """Diagnose credential problems in whichever environment this is running in."""
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(ROOT / ".env")
+    except ImportError:
+        pass
+
+    from src.telegram_sender import describe_token, sanitize_secret
+
+    raw_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    raw_chat = os.getenv("TELEGRAM_CHAT_ID", "")
+    token = sanitize_secret(raw_token, "TELEGRAM_BOT_TOKEN")
+    chat_id = sanitize_secret(raw_chat, "TELEGRAM_CHAT_ID")
+
+    print("Credential check (no secret values are printed)")
+    print(f"  token present      {'yes' if raw_token else 'NO'}")
+    print(f"  token shape        {describe_token(token)}")
+    if raw_token != token:
+        print("  token cleanup      stripped quotes/whitespace/name prefix from the stored value")
+    print(f"  chat id present    {'yes' if raw_chat else 'NO'}")
+    print(f"  chat id numeric    {'yes' if chat_id.lstrip('-').isdigit() else 'NO - this should be a number'}")
+    if raw_chat != chat_id:
+        print("  chat id cleanup    stripped quotes/whitespace/name prefix from the stored value")
+
+    if not token or not chat_id:
+        print("\nFAIL: a credential is missing.")
+        return 2
+
+    import requests
+
+    try:
+        response = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=15)
+    except requests.RequestException as exc:
+        print(f"\nFAIL: could not reach Telegram: {exc}")
+        return 2
+
+    if response.status_code == 200:
+        bot = (response.json().get("result") or {})
+        print(f"\nOK: token is valid. Bot is @{bot.get('username')} (id {bot.get('id')}).")
+        return 0
+
+    print(f"\nFAIL: Telegram returned {response.status_code} for getMe.")
+    print("  404 or 401 means the token value itself is wrong, truncated, or revoked.")
+    print("  Re-copy it from @BotFather and paste ONLY the token - no name, quotes or spaces.")
+    return 2
+
+
 def cmd_list(cfg: Config, now: datetime) -> int:
     day = cfg.day(tu.weekday_key(now))
     print(f"{tu.fmt_date(now)} ({cfg.timezone})")
@@ -322,6 +371,11 @@ def main(argv: list[str] | None = None) -> int:
         help="send for real but record nothing, so the scheduled copy still arrives",
     )
     parser.add_argument("--list", action="store_true", help="print today's schedule and exit")
+    parser.add_argument(
+        "--doctor",
+        action="store_true",
+        help="check credentials and report what is wrong, without printing them",
+    )
     parser.add_argument("--no-poll", action="store_true", help="skip reading replies")
     parser.add_argument("--ignore-quiet-hours", action="store_true")
     parser.add_argument("--verbose", action="store_true")
@@ -333,6 +387,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+    if args.doctor:
+        return cmd_doctor()
 
     try:
         cfg = load_config(CONFIG_DIR)

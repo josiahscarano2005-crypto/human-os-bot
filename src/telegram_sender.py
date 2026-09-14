@@ -29,6 +29,34 @@ def mask(token: str) -> str:
     return f"{token[:4]}...{token[-4:]}"
 
 
+def sanitize_secret(value: str, name: str = "") -> str:
+    """Recover from the usual copy-paste damage.
+
+    A secret pasted into GitHub's web form often arrives as
+    `TELEGRAM_BOT_TOKEN=123:abc`, wrapped in quotes, or with a trailing
+    newline. Telegram answers all of those with a bare 404, so clean them up
+    here rather than losing a morning to it.
+    """
+    cleaned = (value or "").strip().strip("\"'").strip()
+    prefix = f"{name}="
+    if name and cleaned.upper().startswith(prefix.upper()):
+        cleaned = cleaned[len(prefix) :].strip().strip("\"'").strip()
+    return cleaned
+
+
+def describe_token(token: str) -> str:
+    """Describe a token's shape for troubleshooting, without revealing it."""
+    if not token:
+        return "empty"
+    if ":" not in token:
+        return f"{len(token)} chars, no ':' separator - this does not look like a bot token"
+    bot_id, _, secret = token.partition(":")
+    shape = f"{len(token)} chars, bot id {len(bot_id)} digits, secret {len(secret)} chars"
+    if not bot_id.isdigit():
+        shape += " - the part before ':' should be all digits"
+    return shape
+
+
 def harden_markdown(text: str) -> str:
     """Neutralise stray formatting characters in message text.
 
@@ -63,8 +91,8 @@ class TelegramSender:
                 raise TelegramError(
                     "TELEGRAM_CHAT_ID is missing. Set it in .env locally or as a GitHub Secret."
                 )
-        self._token = token
-        self.chat_id = str(chat_id)
+        self._token = sanitize_secret(token, "TELEGRAM_BOT_TOKEN")
+        self.chat_id = sanitize_secret(str(chat_id), "TELEGRAM_CHAT_ID")
         self.dry_run = dry_run
         self._session = session or requests.Session()
 
@@ -100,10 +128,14 @@ class TelegramSender:
                 last_error = f"429 rate limited: {body}"
                 continue
 
-            if response.status_code == 401:
+            if response.status_code in (401, 404):
                 raise TelegramError(
-                    f"Telegram rejected the token {mask(self._token)} (401). "
-                    "Revoke and regenerate it with @BotFather, then update the secret."
+                    f"Telegram rejected the token ({response.status_code}). "
+                    f"Token shape: {describe_token(self._token)}. "
+                    "The value is wrong, truncated, or was revoked. Re-copy it from "
+                    "@BotFather and update .env locally or the TELEGRAM_BOT_TOKEN "
+                    "secret on GitHub - paste the token only, with no name, quotes "
+                    "or trailing spaces."
                 )
 
             if response.status_code == 400 and "parse entities" in body:

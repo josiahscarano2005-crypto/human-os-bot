@@ -21,7 +21,7 @@ on:
         required: true
         default: 'run'
         type: choice
-        options: [run, test, preview, dry-run, list]
+        options: [run, test, preview, doctor, dry-run, list]
       only_event:
         description: 'Single event id to fire (e.g. mon_briefing)'
         required: false
@@ -86,6 +86,7 @@ jobs:
           case "$MODE" in
             test)    ARGS+=(--test) ;;
             preview) ARGS+=(--preview) ;;
+            doctor)  ARGS+=(--doctor) ;;
             dry-run) ARGS+=(--dry-run) ;;
             list)    ARGS+=(--list) ;;
           esac

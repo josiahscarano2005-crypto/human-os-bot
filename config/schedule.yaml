@@ -1,0 +1,528 @@
+# Human OS recurring schedule.
+#
+# HOW TO EDIT SAFELY
+#   - Times are 24-hour "HH:MM" in the timezone below.
+#   - Every event needs a unique `id` (used for de-duplication). Never reuse one.
+#   - `template` must exist in config/messages.yaml. `vars` fill its {placeholders}.
+#   - `variant: name` means the event only fires when that name is listed in
+#     active_variants. Events with no variant always fire.
+#   - Run `python scripts/validate_config.py` after editing. It will catch typos.
+
+timezone: America/New_York
+
+# Flip these as reality changes (boss conversation, lab registration).
+variants:
+  work_tuesday: "CURRENT: work Tue 10:00-16:00 (conflicts with ZOOL lab)"
+  no_work_tuesday: "PROPOSED: Tuesday is a library deep-work day"
+  work_thursday: "PROPOSED: work Thu 10:00-16:00"
+  zool_lab_l04: "ZOOL 518 lab L04, Wed 13:10-15:30, Rudman G31"
+  ansc_r04: "ANSC 612 recitation R04, Wed 12:10-13:00, Ham-Smith 126"
+
+active_variants:
+  - work_tuesday
+  - zool_lab_l04
+  - ansc_r04
+
+defaults:
+  # How late a message may still be delivered if GitHub Actions runs late.
+  grace_minutes: 40
+  # Nothing is ever sent outside this local window.
+  quiet_hours_start: "23:30"
+  quiet_hours_end: "06:00"
+  # Escalation behaviour for events with `requires_ack: true`.
+  ack:
+    escalate_after_minutes: 25
+    max_escalations: 2
+    expire_after_minutes: 150
+    escalation_templates:
+      - mvd_escalation_1
+      - mvd_escalation_2
+
+days:
+
+  monday:
+    agenda:
+      - "08:10-09:00  ZOOL 518 - Parsons N104"
+      - "10:10-11:00  BMCB 658 - MUB 312"
+      - "13:00-17:00  WORK"
+    events:
+      - id: mon_briefing
+        time: "06:30"
+        template: morning_briefing
+      - id: mon_zool_transition
+        time: "07:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "ZOOL 518 at 8:10"
+          where: "Parsons N104"
+          extra: "Notebook and pen, not the laptop."
+      - id: mon_bmcb_transition
+        time: "09:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "BMCB 658 at 10:10"
+          where: "MUB 312"
+          extra: "Walk straight there. Do not route past your room."
+      - id: mon_post_class
+        time: "11:05"
+        template: post_class
+        vars:
+          what: "BMCB 658"
+          next_step: "eat, then be at work by 1:00"
+      - id: mon_pre_work_fuel
+        time: "12:15"
+        template: pre_work_fuel
+        vars:
+          detail: "Shift starts at 1:00 and runs to 5:00."
+      - id: mon_work_transition
+        time: "12:45"
+        template: transition
+        vars:
+          minutes: 15
+          what: "WORK at 1:00"
+          where: "your work site"
+          extra: "Water bottle filled before you walk in."
+      - id: mon_fuel
+        time: "15:45"
+        template: fuel_preemptive
+      - id: mon_work_wrapup
+        time: "16:45"
+        template: work_wrapup
+        vars:
+          minutes: 15
+          end_time: "5:00"
+      - id: mon_reentry
+        time: "17:20"
+        template: post_work_reentry
+        vars:
+          task: "eat a real dinner, then 30 minutes on the nearest deadline"
+      - id: mon_music_warning
+        time: "19:45"
+        template: music_warning
+      - id: mon_music_stop
+        time: "20:00"
+        template: music_hard_stop
+      - id: mon_mvd
+        time: "21:00"
+        template: mvd_check
+        requires_ack: true
+      - id: mon_shutdown
+        time: "22:30"
+        template: shutdown
+        vars:
+          first_action: "shower, then ZOOL at 8:10"
+
+  tuesday:
+    agenda:
+      - "08:10-09:30  ANSC 612 - McConnell 240"
+      - "10:00-16:00  WORK (current) / LIBRARY DEEP WORK (proposed)"
+    events:
+      - id: tue_briefing
+        time: "06:30"
+        template: morning_briefing
+      - id: tue_ansc_transition
+        time: "07:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "ANSC 612 at 8:10"
+          where: "McConnell Hall 240"
+          extra: "Notebook and pen."
+      - id: tue_post_class
+        time: "09:35"
+        template: post_class
+        vars:
+          what: "ANSC 612"
+          next_step: "work at 10:00"
+        variant: work_tuesday
+      - id: tue_post_class_library
+        time: "09:35"
+        template: post_class
+        vars:
+          what: "ANSC 612"
+          next_step: "library, not your room"
+        variant: no_work_tuesday
+      - id: tue_work_transition
+        time: "09:40"
+        template: transition
+        vars:
+          minutes: 20
+          what: "WORK at 10:00"
+          where: "your work site"
+          extra: "Eat something on the way. Meds are peaking now."
+        variant: work_tuesday
+      - id: tue_deep_work
+        time: "10:00"
+        template: deep_work_block
+        vars:
+          duration: "2 hours"
+          where: "the library, not your room"
+          target: "the nearest deadline on your list"
+          dod: "one assignment moved from not-started to submitted-or-drafted"
+        variant: no_work_tuesday
+      - id: tue_lunch
+        time: "12:15"
+        template: pre_work_fuel
+        vars:
+          detail: "Meds are peaking. You are not hungry. Eat anyway."
+      - id: tue_deep_work_pm
+        time: "13:15"
+        template: deep_work_block
+        vars:
+          duration: "2 hours"
+          where: "the library"
+          target: "ZOOL lab prep or BMCB problem set"
+          dod: "notes closed with a written next step"
+        variant: no_work_tuesday
+      - id: tue_fuel
+        time: "15:45"
+        template: fuel_preemptive
+      - id: tue_work_wrapup
+        time: "15:35"
+        template: work_wrapup
+        vars:
+          minutes: 15
+          end_time: "4:00"
+        variant: work_tuesday
+      - id: tue_reentry
+        time: "16:20"
+        template: post_work_reentry
+        vars:
+          task: "eat a real dinner before you open anything"
+        variant: work_tuesday
+      - id: tue_music_warning
+        time: "19:45"
+        template: music_warning
+      - id: tue_music_stop
+        time: "20:00"
+        template: music_hard_stop
+      - id: tue_mvd
+        time: "21:00"
+        template: mvd_check
+        requires_ack: true
+      - id: tue_shutdown
+        time: "22:30"
+        template: shutdown
+        vars:
+          first_action: "shower, then ZOOL at 8:10"
+
+  wednesday:
+    agenda:
+      - "08:10-09:00  ZOOL 518 - Parsons N104"
+      - "10:10-11:00  BMCB 658 - MUB 312"
+      - "11:10-12:00  BMCB recitation"
+      - "12:10-13:00  ANSC recitation R04 - Ham-Smith 126"
+      - "13:10-15:30  ZOOL LAB L04 - Rudman G31 (closed-toe shoes)"
+    events:
+      - id: wed_briefing
+        time: "06:30"
+        template: morning_briefing
+      - id: wed_pack_food
+        time: "06:50"
+        template: hydrate
+        vars: {}
+      - id: wed_pack_lunch
+        time: "06:55"
+        template: pre_work_fuel
+        vars:
+          detail: "PACK FOOD NOW - you have back-to-back blocks 8:10 to 15:30 with no real gap. Two portable meals in the bag."
+      - id: wed_zool_transition
+        time: "07:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "ZOOL 518 at 8:10"
+          where: "Parsons N104"
+          extra: "CLOSED-TOE SHOES today - lab is at 1:10 and you will not come home."
+      - id: wed_bmcb_transition
+        time: "09:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "BMCB 658 at 10:10"
+          where: "MUB 312"
+          extra: "Eat something between buildings."
+      - id: wed_recit_transition
+        time: "10:55"
+        template: transition
+        vars:
+          minutes: 15
+          what: "BMCB recitation at 11:10"
+          where: "same building - check Canvas for the room"
+          extra: "Stay put. Do not leave and come back."
+      - id: wed_ansc_recit_transition
+        time: "11:55"
+        template: transition
+        vars:
+          minutes: 15
+          what: "ANSC recitation R04 at 12:10"
+          where: "Ham-Smith 126 (one syllabus says Pettee HS126 - confirm once)"
+          extra: "Eat meal 1 from your bag while walking."
+        variant: ansc_r04
+      - id: wed_lab_transition
+        time: "12:55"
+        template: transition
+        vars:
+          minutes: 15
+          what: "ZOOL LAB at 1:10 (runs to 3:30)"
+          where: "Rudman G31"
+          extra: "CLOSED-TOE SHOES. Eat meal 2 NOW - the next window is 3:30."
+        variant: zool_lab_l04
+      - id: wed_post_lab_fuel
+        time: "15:35"
+        template: fuel_preemptive
+        variant: zool_lab_l04
+      - id: wed_fuel
+        time: "15:45"
+        template: fuel_preemptive
+      - id: wed_reentry
+        time: "16:00"
+        template: post_work_reentry
+        vars:
+          task: "eat a real dinner, then 20 minutes of lab notes while it is fresh"
+      - id: wed_music_warning
+        time: "19:45"
+        template: music_warning
+      - id: wed_music_stop
+        time: "20:00"
+        template: music_hard_stop
+      - id: wed_mvd
+        time: "21:00"
+        template: mvd_check
+        requires_ack: true
+      - id: wed_shutdown
+        time: "22:30"
+        template: shutdown
+        vars:
+          first_action: "shower, then ANSC at 8:10"
+
+  thursday:
+    agenda:
+      - "08:10-09:30  ANSC 612 - McConnell 240"
+      - "10:00-16:00  WORK (proposed - after the boss conversation)"
+    events:
+      - id: thu_briefing
+        time: "06:30"
+        template: morning_briefing
+      - id: thu_ansc_transition
+        time: "07:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "ANSC 612 at 8:10"
+          where: "McConnell Hall 240"
+          extra: "Notebook and pen."
+      - id: thu_post_class
+        time: "09:35"
+        template: post_class
+        vars:
+          what: "ANSC 612"
+          next_step: "library or work - decide before you stand up"
+      - id: thu_work_transition
+        time: "09:40"
+        template: transition
+        vars:
+          minutes: 20
+          what: "WORK at 10:00"
+          where: "your work site"
+          extra: "Food in the bag. You will not stop for it later."
+        variant: work_thursday
+      - id: thu_deep_work
+        time: "10:00"
+        template: deep_work_block
+        vars:
+          duration: "2 hours"
+          where: "the library"
+          target: "the nearest deadline"
+          dod: "one thing submitted or drafted"
+        variant: no_work_tuesday
+      - id: thu_lunch
+        time: "12:15"
+        template: pre_work_fuel
+        vars:
+          detail: "Second dose window. Food first, then the dose."
+      - id: thu_fuel
+        time: "15:45"
+        template: fuel_preemptive
+      - id: thu_work_wrapup
+        time: "15:35"
+        template: work_wrapup
+        vars:
+          minutes: 15
+          end_time: "4:00"
+        variant: work_thursday
+      - id: thu_reentry
+        time: "16:20"
+        template: post_work_reentry
+        vars:
+          task: "eat dinner, then 30 minutes on Friday's BMCB homework"
+      - id: thu_music_warning
+        time: "19:45"
+        template: music_warning
+      - id: thu_music_stop
+        time: "20:00"
+        template: music_hard_stop
+      - id: thu_mvd
+        time: "21:00"
+        template: mvd_check
+        requires_ack: true
+      - id: thu_shutdown
+        time: "22:30"
+        template: shutdown
+        vars:
+          first_action: "shower, then ZOOL at 8:10"
+
+  friday:
+    agenda:
+      - "08:10-09:00  ZOOL 518 - Parsons N104"
+      - "10:10-11:00  BMCB 658 - MUB 312"
+      - "12:30-17:00  WORK"
+      - "23:55        BMCB homework due (most weeks)"
+    events:
+      - id: fri_briefing
+        time: "06:30"
+        template: morning_briefing
+      - id: fri_zool_transition
+        time: "07:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "ZOOL 518 at 8:10"
+          where: "Parsons N104"
+          extra: "Last class of the week. Show up."
+      - id: fri_bmcb_transition
+        time: "09:45"
+        template: transition
+        vars:
+          minutes: 25
+          what: "BMCB 658 at 10:10"
+          where: "MUB 312"
+          extra: ""
+      - id: fri_homework_window
+        time: "11:10"
+        template: deep_work_block
+        vars:
+          duration: "60 minutes"
+          where: "the library - not your room, not the dining hall"
+          target: "BMCB homework due 11:55 PM TONIGHT"
+          dod: "submitted on Canvas, confirmation screenshot saved"
+      - id: fri_pre_work_fuel
+        time: "12:00"
+        template: pre_work_fuel
+        vars:
+          detail: "Shift is 12:30 to 5:00."
+      - id: fri_work_transition
+        time: "12:15"
+        template: transition
+        vars:
+          minutes: 15
+          what: "WORK at 12:30"
+          where: "your work site"
+          extra: ""
+      - id: fri_fuel
+        time: "15:45"
+        template: fuel_preemptive
+      - id: fri_work_wrapup
+        time: "16:45"
+        template: work_wrapup
+        vars:
+          minutes: 15
+          end_time: "5:00"
+      - id: fri_homework_check
+        time: "18:30"
+        template: deadline_final_call
+        vars:
+          course: "BMCB 658"
+          title: "Weekly homework"
+          due_str: "11:55 PM tonight"
+      - id: fri_music_warning
+        time: "19:45"
+        template: music_warning
+      - id: fri_music_stop
+        time: "20:00"
+        template: music_hard_stop
+      - id: fri_mvd
+        time: "21:00"
+        template: mvd_check
+        requires_ack: true
+      - id: fri_submit_final
+        time: "22:00"
+        template: deadline_final_call
+        vars:
+          course: "BMCB 658"
+          title: "Weekly homework"
+          due_str: "11:55 PM - under 2 hours"
+
+  saturday:
+    agenda:
+      - "Recovery day. One maintenance block. Two real meals minimum."
+    events:
+      - id: sat_briefing
+        time: "09:00"
+        template: weekend_briefing
+      - id: sat_maintenance
+        time: "11:00"
+        template: maintenance_block
+        vars:
+          options: "groceries, laundry, or dishes"
+        requires_ack: true
+      - id: sat_fuel
+        time: "15:45"
+        template: fuel_preemptive
+      - id: sat_music_warning
+        time: "19:45"
+        template: music_warning
+      - id: sat_music_stop
+        time: "20:00"
+        template: music_hard_stop
+      - id: sat_mvd
+        time: "21:00"
+        template: mvd_check
+        requires_ack: true
+      - id: sat_shutdown
+        time: "23:00"
+        template: shutdown
+        vars:
+          first_action: "shower and eat before noon"
+
+  sunday:
+    agenda:
+      - "Reset day. Weekly review at 4 PM. Monday staged tonight."
+    events:
+      - id: sun_briefing
+        time: "09:00"
+        template: weekend_briefing
+      - id: sun_maintenance
+        time: "11:00"
+        template: maintenance_block
+        vars:
+          options: "groceries for the week, or laundry"
+        requires_ack: true
+      - id: sun_fuel
+        time: "15:45"
+        template: fuel_preemptive
+      - id: sun_weekly_review
+        time: "16:00"
+        template: weekly_review
+        requires_ack: true
+      - id: sun_monday_prep
+        time: "18:00"
+        template: monday_prep
+        requires_ack: true
+      - id: sun_music_warning
+        time: "19:45"
+        template: music_warning
+      - id: sun_music_stop
+        time: "20:00"
+        template: music_hard_stop
+      - id: sun_mvd
+        time: "21:00"
+        template: mvd_check
+        requires_ack: true
+      - id: sun_shutdown
+        time: "22:00"
+        template: shutdown
+        vars:
+          first_action: "shower, then ZOOL at 8:10 - Monday is a full day"

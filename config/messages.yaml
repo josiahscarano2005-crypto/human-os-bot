@@ -1,0 +1,218 @@
+# Message templates and tone rules for Human OS.
+# Placeholders in {braces} are filled by src/main.py. Unknown placeholders are
+# left blank rather than crashing, so it is safe to edit these by hand.
+
+tone:
+  rules:
+    - One message, one physical action.
+    - Short lines. No paragraphs during a transition.
+    - Name the location. Name the object to pick up.
+    - State the Definition of Done when the last 10% is the risky part.
+    - Firm and non-negotiable. Never shaming, never threatening.
+    - A missed day is a restart, not a verdict.
+  banned:
+    - Guilt or shame language.
+    - Long emotional lectures.
+    - Financial or social consequences.
+
+templates:
+
+  # ---------- Daily openers ----------
+
+  morning_briefing: |
+    *MORNING BRIEFING* - {date}
+    {recovery}
+    *MVD (non-negotiable)*
+    1. Shower
+    2. Class
+    3. 2-3 real meals
+
+    *Today*
+    {agenda}
+
+    *Top 3*
+    {priorities}
+    {deadlines}
+    Phone face down. Shoes on. Feet on the floor.
+    You do not need motivation. You need the next physical action.
+
+  weekend_briefing: |
+    *WEEKEND BRIEFING* - {date}
+    {recovery}
+    *MVD*: shower, eat 2-3 times, one maintenance block.
+
+    *Today*
+    {agenda}
+    {deadlines}
+    Do not scroll in bed. Sit up, feet down, stand.
+
+  recovery_block: |
+    Yesterday did not close out. That is data, not a verdict.
+    Restart protocol - do these three, in order:
+    1. Shower now.
+    2. Next class or work block, no matter how late.
+    3. Eat a real meal before noon.
+    Nothing else counts today until those are done.
+
+  # ---------- Transitions ----------
+
+  transition: |
+    *TRANSITION - {minutes} MIN*
+    {what}
+    Location: {where}
+    {extra}
+    Stand up now. Bag, water, keys. Phone in pocket, not in hand.
+
+  post_class: |
+    *POST-CLASS - {what}*
+    Definition of Done: 5 minutes reviewing notes, then move.
+    Next: {next_step}
+    Do not sit down "for a second."
+
+  # ---------- Fuel ----------
+
+  pre_work_fuel: |
+    *FUEL BEFORE WORK*
+    Eat now. Not later. {detail}
+    Definition of Done: food is eaten, not planned.
+    Meds burn your appetite. The 6 PM crash is built at noon.
+
+  fuel_preemptive: |
+    *PRE-EMPTIVE FUEL - 15 MIN TO 4 PM*
+    Eat protein now, before the crash decides for you.
+    Definition of Done: swallowed, not "in a minute."
+    This is the message that prevents a $30 dinner and a wrecked evening.
+
+  hydrate: |
+    *WATER*
+    Fill the bottle. Drink half of it now.
+
+  # ---------- Work ----------
+
+  work_wrapup: |
+    *WORK WRAP-UP - {minutes} MIN LEFT*
+    Write tomorrow's top 3 tasks before you clock out.
+    Definition of Done: list written down, not memorized.
+    Clock out at {end_time}. Do not drift.
+
+  post_work_reentry: |
+    *RE-ENTRY PROTOCOL*
+    Shoes stay ON for 20 minutes.
+    Do one thing before you sit: {task}
+    Sitting down with shoes off ends the day. You know this.
+
+  # ---------- Deep work ----------
+
+  deep_work_block: |
+    *DEEP WORK - {duration}*
+    Location: {where}
+    Open exactly one thing: {target}
+    Phone in bag, not on the table. Playlist on.
+    Definition of Done: {dod}
+
+  # ---------- Evening ----------
+
+  music_warning: |
+    *MUSIC HARD STOP - 15 MIN*
+    Bounce what you have. Name the file. Do not start a new idea.
+    2 AM starts with "just one more bar."
+
+  music_hard_stop: |
+    *HARD STOP. 8 PM.*
+    Save. Close the DAW. Stand up.
+    The track will still be there tomorrow. Tomorrow's 8:10 AM will not wait.
+
+  mvd_check: |
+    *MVD CHECK-IN*
+    Reply *done* if all three are true:
+    1. Showered
+    2. Made it to class / work
+    3. Ate 2-3 real meals
+
+    Reply *skip* if not. No judgment, but no pretending.
+    If you ignore this, the system escalates.
+
+  mvd_escalation_1: |
+    *NO RESPONSE - ESCALATION 1*
+    One word. *done* or *skip*.
+    If one of the three is missing and it is fixable in 10 minutes, fix it now:
+    shower, or eat something real.
+
+  mvd_escalation_2: |
+    *NO RESPONSE - ESCALATION 2*
+    Last ask tonight. Reply *done* or *skip*.
+    Then: phone on the charger outside the bedroom. Shoes and bag at the door.
+
+  shutdown: |
+    *SHUTDOWN ROUTINE*
+    1. Phone on charger OUTSIDE the bedroom.
+    2. Shoes, bag, water bottle at the door.
+    3. Tomorrow's first action written on paper: {first_action}
+    Lights out. Hyperfocus is not a plan.
+
+  monday_prep: |
+    *MONDAY PRE-COMMITMENT*
+    Do these now, while it is cheap:
+    1. Pack lunch for tomorrow.
+    2. Bag packed: laptop, charger, notebook, water bottle.
+    3. Clothes and shoes out.
+    Definition of Done: all three physically staged at the door.
+
+  # ---------- Weekend maintenance ----------
+
+  maintenance_block: |
+    *MAINTENANCE BLOCK - ONE THING*
+    Pick one and start within 10 minutes: {options}
+    Definition of Done:
+    - Laundry: folded AND in drawers.
+    - Groceries: bought AND put away.
+    - Dishes: washed AND put away.
+    Half-done is not done.
+
+  weekly_review: |
+    *WEEKLY RESET - 15 MIN*
+    1. Open Canvas. Write every due date for the next 7 days on paper.
+    2. Answer: what single thing derailed this week?
+    3. Pick ONE fix for next week. Only one.
+    Then close the laptop. Review over, week starts clean.
+
+  # ---------- Deadlines ----------
+
+  deadline_alert: |
+    *DEADLINE - {course}*
+    {title}
+    Due: {due_str} ({when})
+    Definition of Done: {dod}
+    Submitted beats perfect. Start the first 5 minutes now.
+
+  deadline_final_call: |
+    *FINAL CALL - {course}*
+    {title} is due {due_str}.
+    Submit what exists RIGHT NOW. A partial submission scores; a perfect draft on your laptop scores zero.
+
+  # ---------- Bot replies ----------
+
+  ack_ok: |
+    Logged. {streak}
+    Phone down. Next action.
+
+  ack_skip: |
+    Logged as missed. No spiral.
+    Tomorrow's restart: shower, class, one real meal before noon.
+
+  status_reply: |
+    *STATUS - {date}*
+    {status_body}
+
+  help_reply: |
+    *HUMAN OS*
+    done - mark the current check-in complete
+    skip - mark it missed, no spiral
+    /status - today's sent messages and open check-ins
+    /help - this message
+
+  test_message: |
+    *TEST - HUMAN OS ONLINE*
+    Time (America/New_York): {now}
+    Mode: {mode}
+    If you are reading this on your phone, delivery works.

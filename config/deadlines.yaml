@@ -1,0 +1,94 @@
+# Academic deadlines - administrative reminder data only.
+# This bot never produces coursework. It only tells you what is due and when to start.
+#
+# Fields:
+#   id      unique, never reused (used for de-duplication)
+#   course  short course code
+#   title   what it is
+#   due     "YYYY-MM-DD HH:MM" local time (America/New_York)
+#   dod     Definition of Done - what "finished" physically means
+#   status  pending | submitted | accepted_drop   (edit this as things close out)
+#   remind_days_before  overrides the policy below for a single item
+
+reminder_policy:
+  # Days-before -> time of day the alert fires.
+  alert_times:
+    "5": "17:00"
+    "3": "17:00"
+    "1": "19:30"
+    "0": "07:00"
+  default_remind_days_before: [3, 1, 0]
+  # How far ahead the morning briefing looks.
+  briefing_lookahead_days: 5
+  # Overdue pending items keep showing in the briefing for this many days.
+  overdue_nag_days: 7
+
+deadlines:
+
+  - id: zool_quiz_1
+    course: ZOOL 518
+    title: "Canvas Quiz #1"
+    due: "2026-09-14 08:00"
+    dod: "Submitted on Canvas. If the window closed, email the professor TODAY and ask for the late window - late registration is a real reason."
+    status: pending
+    remind_days_before: [0]
+
+  - id: ansc_quiz_1
+    course: ANSC 612
+    title: "Canvas Quiz #1"
+    due: "2026-09-15 08:00"
+    dod: "Submitted on Canvas before 8:00 AM. Do it the night before, not at 7:50."
+    status: pending
+    remind_days_before: [1, 0]
+
+  - id: bmcb_hw_1
+    course: BMCB 658
+    title: "Homework 1 (was due 9/11)"
+    due: "2026-09-11 23:55"
+    dod: "Decision made, not a task: two lowest homework scores are dropped. Take the drop, stop carrying it."
+    status: accepted_drop
+
+  - id: bmcb_hw_2
+    course: BMCB 658
+    title: "Homework 2"
+    due: "2026-09-18 23:55"
+    dod: "Submitted on Canvas + confirmation screenshot saved."
+    status: pending
+
+  - id: ansc_quiz_2
+    course: ANSC 612
+    title: "Canvas Quiz #2"
+    due: "2026-09-22 08:00"
+    dod: "Submitted on Canvas before 8:00 AM."
+    status: pending
+
+  - id: bmcb_exam_1
+    course: BMCB 658
+    title: "Exam 1 (in class)"
+    due: "2026-09-23 10:10"
+    dod: "Walked into MUB 312 on time. Study blocks scheduled 3 days out, not the night before."
+    status: pending
+    remind_days_before: [5, 3, 1, 0]
+
+  - id: zool_quiz_2
+    course: ZOOL 518
+    title: "Canvas Quiz #2"
+    due: "2026-09-23 08:00"
+    dod: "Submitted on Canvas before 8:00 AM."
+    status: pending
+
+  - id: ansc_exam_1
+    course: ANSC 612
+    title: "Unit Exam 1 (in class)"
+    due: "2026-09-24 08:10"
+    dod: "Walked into McConnell 240 on time, with sleep."
+    status: pending
+    remind_days_before: [5, 3, 1, 0]
+
+  - id: zool_exam_1
+    course: ZOOL 518
+    title: "Unit Exam 1 (in class)"
+    due: "2026-09-25 08:10"
+    dod: "Walked into Parsons N104 on time, with sleep."
+    status: pending
+    remind_days_before: [5, 3, 1, 0]

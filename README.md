@@ -123,10 +123,43 @@ From the Actions tab, **Run workflow** offers the same modes: `run`, `test`,
 
 | You send | It does |
 |---|---|
+| `+ buy stamps` | adds a task (`/add buy stamps` works too) |
+| `+ !housing form @fri` | `!` marks it top priority, `@fri` sets a due date |
+| `/tasks` | shows the numbered list |
+| `/done 3` | closes task 3 |
+| `/drop 3` | deletes task 3 — deciding not to do it is a decision |
 | `done` | closes the open check-in, increments your streak |
 | `skip` | logs it as missed, no spiral, triggers tomorrow's restart protocol |
-| `/status` | today's message count, open check-ins, streak, yesterday's result |
+| `/status` | today's messages, task counts, open check-ins, streak |
 | `/help` | the list above |
+
+### The task list
+
+Capture has to cost nothing, so adding a task is one line of text to the bot
+from wherever you are. Due dates accept `@today`, `@tomorrow`, a weekday like
+`@fri`, or `@2026-09-20`. Both suffixes are optional.
+
+Tasks then feed the rest of the system rather than sitting in a separate app:
+
+- The **morning briefing** lists your open tasks, and anything starred, due
+  today, or older than 4 days competes for a slot in the Top 3 alongside
+  academic deadlines.
+- The **shutdown message** shows what is still open while tomorrow can still
+  absorb it, and counts what you closed.
+- Tasks open 4+ days get an age marker; at 8+ days the list says *shrink it or
+  drop it*. An old task is usually badly defined, not evidence about you.
+
+The list lives in `state/tasks.json`, committed by the workflow, so it survives
+runs and is readable as plain text. You can also manage it at the keyboard:
+
+```powershell
+python scripts\task.py                          # show the list
+python scripts\task.py add "mail the form @fri"
+python scripts\task.py done 3
+```
+
+If you add tasks locally, commit and push `state/tasks.json` so the cloud
+runner sees them — texting the bot avoids that entirely.
 
 ---
 

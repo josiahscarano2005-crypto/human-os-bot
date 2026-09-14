@@ -64,7 +64,8 @@ def main() -> int:
     unused = set(cfg.templates) - {
         event.template for day in cfg.days.values() for event in day.events
     } - {"deadline_alert", "recovery_block", "ack_ok", "ack_skip", "status_reply",
-         "help_reply", "test_message", "mvd_escalation_1", "mvd_escalation_2"}
+         "help_reply", "test_message", "mvd_escalation_1", "mvd_escalation_2",
+         "task_added", "task_completed", "task_list"}
     for name in sorted(unused):
         warnings.append(f"template {name!r} is defined but never used.")
 

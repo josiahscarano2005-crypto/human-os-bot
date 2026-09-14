@@ -32,7 +32,7 @@ templates:
 
     *Top 3*
     {priorities}
-    {deadlines}
+    {deadlines}{tasks}
     Phone face down. Shoes on. Feet on the floor.
     You do not need motivation. You need the next physical action.
 
@@ -43,7 +43,7 @@ templates:
 
     *Today*
     {agenda}
-    {deadlines}
+    {deadlines}{tasks}
     Do not scroll in bed. Sit up, feet down, stand.
 
   recovery_block: |
@@ -145,9 +145,10 @@ templates:
 
   shutdown: |
     *SHUTDOWN ROUTINE*
-    1. Phone on charger OUTSIDE the bedroom.
+    {closed_today}1. Phone on charger OUTSIDE the bedroom.
     2. Shoes, bag, water bottle at the door.
     3. Tomorrow's first action written on paper: {first_action}
+    {open_tasks}
     Lights out. Hyperfocus is not a plan.
 
   monday_prep: |
@@ -204,11 +205,30 @@ templates:
     *STATUS - {date}*
     {status_body}
 
+  task_added: |
+    Added: {task}
+    {count} open. It is out of your head now - stop rehearsing it.
+
+  task_completed: |
+    Closed: {task}
+    {count} left. Done means done, not "basically done."
+
+  task_list: |
+    *YOUR LIST*
+    {tasks}
+
+    `/done <n>` to close, `/drop <n>` to bin it, `+ text` to add.
+
   help_reply: |
     *HUMAN OS*
+    `+ buy stamps` - add a task (or `/add buy stamps`)
+    `+ !form @fri` - `!` = top priority, `@fri` = due Friday
+    /tasks - show the list with numbers
+    `/done 3` - close task 3
+    `/drop 3` - delete task 3
     done - mark the current check-in complete
     skip - mark it missed, no spiral
-    /status - today's sent messages and open check-ins
+    /status - today's messages, tasks and open check-ins
     /help - this message
 
   test_message: |

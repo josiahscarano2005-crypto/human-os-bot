@@ -1,0 +1,45 @@
+{
+  "next_id": 5,
+  "tasks": [
+    {
+      "id": 1,
+      "text": "email ZOOL professor re: Quiz 1 late window",
+      "created": "2026-09-13T22:57:23-04:00",
+      "due": "2026-09-13",
+      "starred": true,
+      "done": false,
+      "done_at": null,
+      "source": "cli"
+    },
+    {
+      "id": 2,
+      "text": "ask boss: Tuesday shift to Thursday, Friday ends 5pm",
+      "created": "2026-09-13T22:57:23-04:00",
+      "due": "2026-09-14",
+      "starred": true,
+      "done": false,
+      "done_at": null,
+      "source": "cli"
+    },
+    {
+      "id": 3,
+      "text": "confirm ZOOL lab section is L04",
+      "created": "2026-09-13T22:57:23-04:00",
+      "due": "2026-09-14",
+      "starred": false,
+      "done": false,
+      "done_at": null,
+      "source": "cli"
+    },
+    {
+      "id": 4,
+      "text": "confirm ANSC recitation room: Ham-Smith 126 or Pettee HS126",
+      "created": "2026-09-13T22:57:23-04:00",
+      "due": "2026-09-14",
+      "starred": false,
+      "done": false,
+      "done_at": null,
+      "source": "cli"
+    }
+  ]
+}

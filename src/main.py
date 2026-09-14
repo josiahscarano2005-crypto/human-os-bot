@@ -30,10 +30,12 @@ if str(ROOT) not in sys.path:
 from src import time_utils as tu  # noqa: E402
 from src.config_loader import Config, ConfigError, Deadline, Event, load_config  # noqa: E402
 from src.state_store import StateStore  # noqa: E402
+from src.task_store import TaskStore  # noqa: E402
 from src.telegram_sender import TelegramError, TelegramSender  # noqa: E402
 
 CONFIG_DIR = ROOT / "config"
 STATE_PATH = ROOT / "state" / "state.json"
+TASKS_PATH = ROOT / "state" / "tasks.json"
 
 DONE_WORDS = {"done", "d", "yes", "y", "did it", "complete", "completed", "✅", "👍"}
 SKIP_WORDS = {"skip", "no", "n", "missed", "nope", "failed"}
@@ -64,7 +66,7 @@ def open_deadlines(cfg: Config, now: datetime) -> list[Deadline]:
     return [d for d in cfg.deadlines if d.is_open]
 
 
-def briefing_vars(cfg: Config, state: StateStore, now: datetime) -> dict[str, Any]:
+def briefing_vars(cfg: Config, state: StateStore, now: datetime, tasks: TaskStore | None = None) -> dict[str, Any]:
     day = cfg.day(tu.weekday_key(now))
     policy = cfg.reminder_policy
     lookahead = int(policy.get("briefing_lookahead_days", 5))
@@ -84,10 +86,12 @@ def briefing_vars(cfg: Config, state: StateStore, now: datetime) -> dict[str, An
             upcoming.append(line)
 
     # Top 3 carries the urgent items; the block below only shows what did not
-    # fit, so the briefing never says the same thing twice.
-    ranked = overdue + upcoming
+    # fit, so the briefing never says the same thing twice. Your own starred,
+    # due or stale tasks outrank a deadline that is still days away.
+    task_picks = tasks.top_for_briefing(now.date()) if tasks else []
+    ranked = overdue + task_picks + upcoming
     priorities = ranked[:3]
-    leftover = ranked[3:]
+    leftover = [line for line in ranked[3:] if line not in task_picks]
 
     deadline_block = ""
     if overdue:
@@ -110,20 +114,41 @@ def briefing_vars(cfg: Config, state: StateStore, now: datetime) -> dict[str, An
     if state.day_status(yesterday) in {"skip", "no_response"}:
         recovery = cfg.render("recovery_block") + "\n"
 
+    task_block = ""
+    if tasks:
+        open_tasks = tasks.open_tasks(now.date())
+        if open_tasks:
+            task_block = "\n*Your list* (/tasks, /done <n>)\n" + tasks.render_list(
+                now.date(), limit=5
+            ) + "\n"
+
     return {
         "date": tu.fmt_date(now),
         "agenda": agenda,
         "priorities": priority_text,
         "deadlines": deadline_block,
         "recovery": recovery,
+        "tasks": task_block,
     }
 
 
-def render_event(cfg: Config, state: StateStore, due: DueEvent, now: datetime) -> str:
+def render_event(
+    cfg: Config, state: StateStore, due: DueEvent, now: datetime, tasks: TaskStore | None = None
+) -> str:
     values: dict[str, Any] = dict(due.event.vars)
     values.update(due.extra_vars)
     if due.event.template in {"morning_briefing", "weekend_briefing"}:
-        values.update(briefing_vars(cfg, state, now))
+        values.update(briefing_vars(cfg, state, now, tasks))
+    elif due.event.template == "shutdown" and tasks:
+        # The last message of the day is the right moment to close the loop on
+        # anything still open, while tomorrow can still absorb it.
+        open_tasks = tasks.open_tasks(now.date())
+        values["open_tasks"] = (
+            "\n*Still open*\n" + tasks.render_list(now.date(), limit=4) + "\n" if open_tasks else ""
+        )
+        done_today = tasks.completed_on(now.date())
+        if done_today:
+            values["closed_today"] = f"Closed today: {len(done_today)}. That counts.\n"
     return cfg.render(due.event.template, **values)
 
 
@@ -194,7 +219,49 @@ def select_due(cfg: Config, state: StateStore, now: datetime, args: argparse.Nam
 # --------------------------------------------------------------------------
 
 
-def poll_replies(cfg: Config, state: StateStore, sender: TelegramSender, now: datetime) -> None:
+def handle_task_command(
+    cfg: Config, tasks: TaskStore, sender: TelegramSender, now: datetime, raw: str
+) -> bool:
+    """Handle task commands. Returns True when the message was a task command."""
+    today = now.date()
+    lowered = raw.strip().lower()
+
+    if raw.startswith("+") or lowered.startswith(("/add ", "/add\n")):
+        body = raw[1:] if raw.startswith("+") else raw[5:]
+        if not body.strip():
+            sender.send("Send the task with it, e.g. `+ mail the housing form @fri`")
+            return True
+        task = tasks.add(body, now)
+        sender.send(cfg.render("task_added", task=task.label(today), count=len(tasks.open_tasks(today))))
+        return True
+
+    if lowered.startswith(("/tasks", "/list")):
+        sender.send(cfg.render("task_list", tasks=tasks.render_list(today)))
+        return True
+
+    if lowered.startswith(("/done ", "/drop ")):
+        command, _, argument = lowered.partition(" ")
+        try:
+            task_id = int(argument.strip().lstrip("#"))
+        except ValueError:
+            sender.send(f"Use a number from /tasks, e.g. `{command} 3`")
+            return True
+        task = tasks.complete(task_id, now) if command == "/done" else tasks.drop(task_id)
+        if not task:
+            sender.send(f"No open task {task_id}. Send /tasks to see the list.")
+        elif command == "/done":
+            remaining = len(tasks.open_tasks(today))
+            sender.send(cfg.render("task_completed", task=task.text, count=remaining))
+        else:
+            sender.send(f"Dropped: {task.text}\nDeciding not to do it is a decision. Fine.")
+        return True
+
+    return False
+
+
+def poll_replies(
+    cfg: Config, state: StateStore, sender: TelegramSender, now: datetime, tasks: TaskStore | None = None
+) -> None:
     updates = sender.get_updates(offset=state.telegram_offset)
     if not updates:
         return
@@ -205,10 +272,14 @@ def poll_replies(cfg: Config, state: StateStore, sender: TelegramSender, now: da
         chat_id = str((message.get("chat") or {}).get("id", ""))
         if chat_id != sender.chat_id:
             continue
-        text = str(message.get("text", "")).strip().lower()
+        raw = str(message.get("text", "")).strip()
+        text = raw.lower()
         if not text:
             continue
         today = now.date().isoformat()
+
+        if tasks is not None and handle_task_command(cfg, tasks, sender, now, raw):
+            continue
 
         if text in DONE_WORDS:
             resolved = state.resolve_acks("done", now)
@@ -225,18 +296,26 @@ def poll_replies(cfg: Config, state: StateStore, sender: TelegramSender, now: da
             sender.send(cfg.render("ack_skip"))
             log.info("Marked %s open check-in(s) as skipped.", len(resolved))
         elif text.startswith("/status"):
-            sender.send(cfg.render("status_reply", date=tu.fmt_date(now), status_body=status_body(state, now)))
+            sender.send(
+                cfg.render(
+                    "status_reply", date=tu.fmt_date(now), status_body=status_body(state, now, tasks)
+                )
+            )
         elif text.startswith(("/help", "/start")):
             sender.send(cfg.render("help_reply"))
 
     state.telegram_offset = highest
 
 
-def status_body(state: StateStore, now: datetime) -> str:
+def status_body(state: StateStore, now: datetime, tasks: TaskStore | None = None) -> str:
     today = now.date().isoformat()
     sent = state.sent_today(today)
     pending = state.pending_acks
     lines = [f"Messages sent today: {len(sent)}"]
+    if tasks is not None:
+        open_count = len(tasks.open_tasks(now.date()))
+        closed = len(tasks.completed_on(now.date()))
+        lines.append(f"Tasks open: {open_count}, closed today: {closed}")
     if pending:
         lines.append("Open check-ins: " + ", ".join(item["event_id"] for item in pending))
         lines.append("Reply *done* or *skip*.")
@@ -410,6 +489,7 @@ def main(argv: list[str] | None = None) -> int:
 
     state = StateStore(STATE_PATH)
     state.touch(now)
+    tasks = TaskStore(TASKS_PATH)
 
     if args.test:
         sender.send(cfg.render("test_message", now=tu.fmt_datetime(now), mode="dry-run" if sender.dry_run else "live"))
@@ -425,7 +505,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.no_poll and not sender.dry_run:
         try:
-            poll_replies(cfg, state, sender, now)
+            poll_replies(cfg, state, sender, now, tasks)
         except TelegramError as exc:
             log.warning("Reply polling failed, continuing: %s", exc)
 
@@ -441,7 +521,7 @@ def main(argv: list[str] | None = None) -> int:
     failures = 0
     for item in due:
         try:
-            text = render_event(cfg, state, item, now)
+            text = render_event(cfg, state, item, now, tasks)
         except KeyError as exc:
             log.error("Skipping %s: %s", item.event.id, exc)
             failures += 1
@@ -463,6 +543,13 @@ def main(argv: list[str] | None = None) -> int:
             run_escalations(cfg, state, sender, now)
         except TelegramError as exc:
             log.warning("Escalation failed: %s", exc)
+
+    # Tasks are your data, not scheduling bookkeeping, so they are saved even
+    # in preview mode - a task you added must never be silently discarded.
+    if not sender.dry_run:
+        tasks.prune(now)
+        if tasks.save():
+            log.info("Task list updated at %s", TASKS_PATH)
 
     if args.preview:
         log.info("Preview mode: nothing recorded, the scheduled copy will still arrive.")

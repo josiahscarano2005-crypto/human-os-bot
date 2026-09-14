@@ -121,4 +121,7 @@ These do more work than any code in this repo.
       Mark things `status: submitted` when they close out.
 - [ ] Reply **done** or **skip** to the 9 PM check-in. That single word is what
       drives the streak counter and the next-morning recovery protocol.
+- [ ] Text the bot `+ <task>` the moment something lands on you — a form, an
+      errand, a reply you owe someone. It appears in tomorrow's briefing.
+      Do not keep a second list somewhere else; two lists means no list.
 - [ ] Run `python scripts\validate_config.py` after editing any YAML.

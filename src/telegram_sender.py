@@ -29,6 +29,21 @@ def mask(token: str) -> str:
     return f"{token[:4]}...{token[-4:]}"
 
 
+def harden_markdown(text: str) -> str:
+    """Neutralise stray formatting characters in message text.
+
+    Telegram's legacy Markdown treats a lone `_` as an unterminated italic tag
+    and rejects the whole message, so a room number like `HS_126` or a timezone
+    like `America/New_York` would cost a reminder. Bold via `*` is the only
+    formatting these templates use, so underscores are always escaped, and
+    asterisks are escaped only when they cannot possibly pair up.
+    """
+    text = text.replace("_", r"\_")
+    if text.count("*") % 2 == 1:
+        text = text.replace("*", r"\*")
+    return text
+
+
 class TelegramSender:
     def __init__(
         self,
@@ -110,6 +125,8 @@ class TelegramSender:
         text = text.strip()
         if not text:
             return None
+        if parse_mode == "Markdown":
+            text = harden_markdown(text)
         if len(text) > TELEGRAM_MAX_CHARS:
             text = text[: TELEGRAM_MAX_CHARS - 20].rstrip() + "\n...[truncated]"
 

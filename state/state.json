@@ -1,7 +1,13 @@
 {
   "day_log": {},
-  "last_run": "2026-09-14T06:24:00-04:00",
+  "last_run": "2026-09-14T06:40:40-04:00",
   "pending_acks": [],
-  "sent": {},
+  "sent": {
+    "2026-09-14:mon_briefing": {
+      "at": "2026-09-14T06:40:40-04:00",
+      "event_id": "mon_briefing",
+      "template": "morning_briefing"
+    }
+  },
   "telegram_offset": 104927719
 }

@@ -316,6 +316,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="ignore de-duplication (use with --only)")
     parser.add_argument("--grace", type=int, help="override the late-delivery window in minutes")
     parser.add_argument("--test", action="store_true", help="send one test message and exit")
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="send for real but record nothing, so the scheduled copy still arrives",
+    )
     parser.add_argument("--list", action="store_true", help="print today's schedule and exit")
     parser.add_argument("--no-poll", action="store_true", help="skip reading replies")
     parser.add_argument("--ignore-quiet-hours", action="store_true")
@@ -367,6 +372,12 @@ def main(argv: list[str] | None = None) -> int:
         except TelegramError as exc:
             log.warning("Reply polling failed, continuing: %s", exc)
 
+    # Preview sends the real message but leaves no trace, so the scheduled
+    # delivery is never consumed by looking at it early.
+    record = not (sender.dry_run or args.preview)
+    if args.preview:
+        args.force = True
+
     due = select_due(cfg, state, now, args)
     log.info("%s event(s) due at %s.", len(due), now.isoformat(timespec="minutes"))
 
@@ -385,16 +396,20 @@ def main(argv: list[str] | None = None) -> int:
             failures += 1
             continue
         log.info("Sent %s (scheduled %s)", item.event.id, item.scheduled.strftime("%H:%M"))
-        if not sender.dry_run:
+        if record:
             state.mark_sent(item.key, now, item.event.id, item.event.template)
             if item.event.requires_ack:
                 state.add_pending_ack(item.key, item.event.id, now, item.day_iso)
 
-    if not sender.dry_run:
+    if record:
         try:
             run_escalations(cfg, state, sender, now)
         except TelegramError as exc:
             log.warning("Escalation failed: %s", exc)
+
+    if args.preview:
+        log.info("Preview mode: nothing recorded, the scheduled copy will still arrive.")
+        return 1 if failures else 0
 
     state.prune(now)
     if not sender.dry_run and state.save():

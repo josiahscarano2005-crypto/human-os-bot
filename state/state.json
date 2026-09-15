@@ -7,7 +7,7 @@
       }
     }
   },
-  "last_run": "2026-09-15T09:37:59-04:00",
+  "last_run": "2026-09-15T09:53:16-04:00",
   "pending_acks": [],
   "sent": {
     "2026-09-14:deadline_ansc_quiz_1_d1": {
@@ -104,6 +104,11 @@
       "at": "2026-09-15T09:37:59-04:00",
       "event_id": "tue_post_class",
       "template": "post_class"
+    },
+    "2026-09-15:tue_work_transition": {
+      "at": "2026-09-15T09:53:16-04:00",
+      "event_id": "tue_work_transition",
+      "template": "transition"
     }
   },
   "telegram_offset": 104927719

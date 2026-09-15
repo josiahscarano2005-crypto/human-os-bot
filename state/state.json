@@ -1,15 +1,14 @@
 {
-  "day_log": {},
-  "last_run": "2026-09-15T05:54:20-04:00",
-  "pending_acks": [
-    {
-      "asked_at": "2026-09-14T21:20:03-04:00",
-      "day": "2026-09-14",
-      "escalations_sent": 2,
-      "event_id": "mon_mvd",
-      "key": "2026-09-14:mon_mvd"
+  "day_log": {
+    "2026-09-14": {
+      "mon_mvd": {
+        "at": "2026-09-15T06:12:01-04:00",
+        "status": "no_response"
+      }
     }
-  ],
+  },
+  "last_run": "2026-09-15T06:12:01-04:00",
+  "pending_acks": [],
   "sent": {
     "2026-09-14:deadline_ansc_quiz_1_d1": {
       "at": "2026-09-14T19:35:00-04:00",

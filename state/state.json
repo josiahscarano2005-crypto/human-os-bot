@@ -1,7 +1,15 @@
 {
   "day_log": {},
-  "last_run": "2026-09-14T20:58:00-04:00",
-  "pending_acks": [],
+  "last_run": "2026-09-14T21:20:03-04:00",
+  "pending_acks": [
+    {
+      "asked_at": "2026-09-14T21:20:03-04:00",
+      "day": "2026-09-14",
+      "escalations_sent": 0,
+      "event_id": "mon_mvd",
+      "key": "2026-09-14:mon_mvd"
+    }
+  ],
   "sent": {
     "2026-09-14:deadline_ansc_quiz_1_d1": {
       "at": "2026-09-14T19:35:00-04:00",
@@ -37,6 +45,11 @@
       "at": "2026-09-14T19:47:36-04:00",
       "event_id": "mon_music_warning",
       "template": "music_warning"
+    },
+    "2026-09-14:mon_mvd": {
+      "at": "2026-09-14T21:20:03-04:00",
+      "event_id": "mon_mvd",
+      "template": "mvd_check"
     },
     "2026-09-14:mon_post_class": {
       "at": "2026-09-14T11:18:25-04:00",
